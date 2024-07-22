@@ -1,64 +1,38 @@
-import sqlite3
-import os
+# File: casino_app/models.py
+from flask_sqlalchemy import SQLAlchemy
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
-DATABASE_FILE = os.path.join(DATA_DIR, 'exclusions.db')
+db = SQLAlchemy()
 
-def init_db():
-    if not os.path.exists(DATA_DIR):
-        os.makedirs(DATA_DIR)
-    conn = sqlite3.connect(DATABASE_FILE)
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS exclusions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            date_of_birth TEXT NOT NULL,
-            gender TEXT,
-            street TEXT,
-            city TEXT,
-            state TEXT,
-            zip TEXT,
-            reason TEXT NOT NULL,
-            start_date TEXT NOT NULL,
-            end_date TEXT,
-            exclusion_authority TEXT,
-            notes TEXT,
-            id_type TEXT,
-            id_number TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
+class Exclusion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    date_of_birth = db.Column(db.String(10), nullable=False)
+    gender = db.Column(db.String(10), nullable=False)
+    street = db.Column(db.String(120), nullable=False)
+    city = db.Column(db.String(80), nullable=False)
+    state = db.Column(db.String(20), nullable=False)
+    zip = db.Column(db.String(10), nullable=False)
+    reason = db.Column(db.String(200), nullable=False)
+    start_date = db.Column(db.String(10), nullable=False)
+    end_date = db.Column(db.String(10), nullable=False)
+    exclusion_authority = db.Column(db.String(100), nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+    id_type = db.Column(db.String(20), nullable=False)
+    id_number = db.Column(db.String(20), nullable=False, unique=True)
+
+def init_db(app):
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///exclusions.db'
+    db.init_app(app)
+    with app.app_context():
+        db.create_all()
 
 def add_exclusion(data):
-    conn = sqlite3.connect(DATABASE_FILE)
-    c = conn.cursor()
-    c.execute('''
-        INSERT INTO exclusions (
-            name, date_of_birth, gender, street, city, state, zip, reason, start_date, end_date, 
-            exclusion_authority, notes, id_type, id_number
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        data['name'], data['date_of_birth'], data['gender'], data['street'], data['city'], data['state'],
-        data['zip'], data['reason'], data['start_date'], data['end_date'], data['exclusion_authority'],
-        data['notes'], data['id_type'], data['id_number']
-    ))
-    conn.commit()
-    conn.close()
+    new_exclusion = Exclusion(**data)
+    db.session.add(new_exclusion)
+    db.session.commit()
 
 def get_exclusion_by_id_number(id_number):
-    conn = sqlite3.connect(DATABASE_FILE)
-    c = conn.cursor()
-    c.execute('SELECT * FROM exclusions WHERE id_number = ?', (id_number,))
-    exclusion = c.fetchone()
-    conn.close()
-    return exclusion
+    return Exclusion.query.filter_by(id_number=id_number).first()
 
 def view_exclusions():
-    conn = sqlite3.connect(DATABASE_FILE)
-    c = conn.cursor()
-    c.execute('SELECT * FROM exclusions')
-    exclusions = c.fetchall()
-    conn.close()
-    return exclusions
+    return Exclusion.query.all()

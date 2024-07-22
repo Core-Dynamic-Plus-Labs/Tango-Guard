@@ -1,8 +1,10 @@
+# File: casino_app/main.py
 from flask import Flask, request, jsonify
 from models import init_db, add_exclusion, get_exclusion_by_id_number, view_exclusions
+from sqlalchemy.exc import IntegrityError
 
 app = Flask(__name__)
-init_db()
+init_db(app)
 
 @app.route('/')
 def index():
@@ -11,29 +13,32 @@ def index():
 @app.route('/exclusions', methods=['POST'])
 def add_exclusion_api():
     data = request.get_json()
-    add_exclusion(data)
-    return jsonify({'message': 'Exclusion added successfully'}), 201
+    try:
+        add_exclusion(data)
+        return jsonify({'message': 'Exclusion added successfully'}), 201
+    except IntegrityError:
+        return jsonify({'message': 'Exclusion with this ID number already exists'}), 400
 
 @app.route('/exclusions/<id_number>', methods=['GET'])
 def get_exclusion_api(id_number):
     exclusion = get_exclusion_by_id_number(id_number)
     if exclusion:
         exclusion_data = {
-            'id': exclusion[0],
-            'name': exclusion[1],
-            'date_of_birth': exclusion[2],
-            'gender': exclusion[3],
-            'street': exclusion[4],
-            'city': exclusion[5],
-            'state': exclusion[6],
-            'zip': exclusion[7],
-            'reason': exclusion[8],
-            'start_date': exclusion[9],
-            'end_date': exclusion[10],
-            'exclusion_authority': exclusion[11],
-            'notes': exclusion[12],
-            'id_type': exclusion[13],
-            'id_number': exclusion[14]
+            'id': exclusion.id,
+            'name': exclusion.name,
+            'date_of_birth': exclusion.date_of_birth,
+            'gender': exclusion.gender,
+            'street': exclusion.street,
+            'city': exclusion.city,
+            'state': exclusion.state,
+            'zip': exclusion.zip,
+            'reason': exclusion.reason,
+            'start_date': exclusion.start_date,
+            'end_date': exclusion.end_date,
+            'exclusion_authority': exclusion.exclusion_authority,
+            'notes': exclusion.notes,
+            'id_type': exclusion.id_type,
+            'id_number': exclusion.id_number
         }
         return jsonify(exclusion_data)
     else:
@@ -45,21 +50,21 @@ def view_exclusions_api():
     exclusion_list = []
     for exclusion in exclusions:
         exclusion_list.append({
-            'id': exclusion[0],
-            'name': exclusion[1],
-            'date_of_birth': exclusion[2],
-            'gender': exclusion[3],
-            'street': exclusion[4],
-            'city': exclusion[5],
-            'state': exclusion[6],
-            'zip': exclusion[7],
-            'reason': exclusion[8],
-            'start_date': exclusion[9],
-            'end_date': exclusion[10],
-            'exclusion_authority': exclusion[11],
-            'notes': exclusion[12],
-            'id_type': exclusion[13],
-            'id_number': exclusion[14]
+            'id': exclusion.id,
+            'name': exclusion.name,
+            'date_of_birth': exclusion.date_of_birth,
+            'gender': exclusion.gender,
+            'street': exclusion.street,
+            'city': exclusion.city,
+            'state': exclusion.state,
+            'zip': exclusion.zip,
+            'reason': exclusion.reason,
+            'start_date': exclusion.start_date,
+            'end_date': exclusion.end_date,
+            'exclusion_authority': exclusion.exclusion_authority,
+            'notes': exclusion.notes,
+            'id_type': exclusion.id_type,
+            'id_number': exclusion.id_number
         })
     return jsonify(exclusion_list)
 
